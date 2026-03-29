@@ -1,65 +1,61 @@
 'use client';
 
-import { DashboardClient } from "@/components/dashboard/dashboard-client";
+import { PersonClient } from "@/components/person/person-client";
+import { notFound } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApp } from "@/hooks/use-app";
-import { useEffect, useState } from "react";
 import type { Person, Transaction } from "@/lib/types";
 
-function DashboardFallback() {
-  return (
-    <div className="container py-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-[110px]" />
-        ))}
+function PersonDetailFallback() {
+    return (
+      <div className="container py-6">
+        <Skeleton className="h-8 w-48 mb-4" />
+        <Skeleton className="h-36 mb-6" />
+        <Skeleton className="h-80" />
       </div>
-      <Skeleton className="h-[400px]" />
-    </div>
-  )
+    );
 }
 
-export default function DashboardPage() {
-  const { user, store, isDataReady } = useApp();
-  const [persons, setPersons] = useState<Person[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
+export default function PersonDetailPage({ params }: { params: { id: string } }) {
+    const { id } = params;
+    const { store, isDataReady } = useApp();
+    const [person, setPerson] = useState<Person | null | undefined>(undefined);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [refreshKey, setRefreshKey] = useState(0);
 
-  const refreshData = () => {
-    setRefreshKey(prev => prev + 1);
-  };
-
-  useEffect(() => {
-    if (isDataReady) {
-      if (user && store) {
-        setIsLoading(true);
-        Promise.all([
-          store.getPersons(),
-          store.getAllTransactions()
-        ]).then(([p, t]) => {
-          setPersons(p);
-          setTransactions(t);
-          setIsLoading(false);
-        });
-      } else {
-        // No user, AppContext will redirect. Stop loading.
-        setIsLoading(false);
-      }
+    const refreshData = () => {
+        setRefreshKey(prev => prev + 1);
     }
-  }, [isDataReady, user, store, refreshKey]);
+    
+    useEffect(() => {
+        const loadData = async () => {
+            if (store) {
+                const personData = await store.getPersonById(id);
+                if (personData) {
+                    const transactionData = await store.getTransactionsByPersonId(id);
+                    setPerson(personData);
+                    setTransactions(transactionData);
+                } else {
+                    setPerson(null); // Not found
+                }
+            }
+        };
 
-  if (!isDataReady || isLoading) {
-    return <DashboardFallback />;
-  }
+        if (isDataReady) {
+            loadData();
+        }
+    }, [isDataReady, store, id, refreshKey]);
 
-  if (!user) {
-      // This path will be hit when `isDataReady` is true but there's no logged in user.
-      // AppContext should handle redirect, but we show fallback in the meantime.
-      return <DashboardFallback />
-  }
+    if (person === undefined) {
+        return <PersonDetailFallback />;
+    }
 
-  return (
-    <DashboardClient persons={persons} transactions={transactions} username={user.username} onDataChange={refreshData} />
-  );
+    if (person === null) {
+        notFound();
+    }
+
+    return (
+        <PersonClient person={person as Person} transactions={transactions} onDataChange={refreshData} />
+    );
 }
