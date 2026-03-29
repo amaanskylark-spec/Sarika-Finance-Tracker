@@ -29,7 +29,7 @@ import { format } from 'date-fns';
 import { cn, debounce } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
 import { useApp } from '@/hooks/use-app';
-import { Badge } from '../ui/badge';
+import { Badge } from '@/components/ui/badge';
 
 const transactionSchema = z.object({
   amount: z.coerce.number().positive('Amount must be positive'),
