@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode, useEffect, useCallback } from 'react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,7 @@ export function AddTransactionDialog({ children, personId, transaction }: AddTra
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isAiLoading, setIsLoading] = useState(false);
 
   const { toast } = useToast();
   const { user } = useApp();
