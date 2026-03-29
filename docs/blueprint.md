@@ -1,0 +1,21 @@
+# **App Name**: Sarkia
+
+## Core Features:
+
+- User Authentication & Security: Enable secure user login and account management. This includes multi-user access for collaborative record updates and a hidden, 2-step authenticated admin access for privileged operations.
+- Real-Time Person & Account Ledger: Create, view, and edit individuals (persons/partners) whose financial accounts are tracked. Features real-time display of person details, initial balances, and an automatic 'Settled' status for zero balances. Ensures correct display of all details for the first entry and subsequent entries.
+- Real-Time Transaction Management: Add, edit, view, and soft-delete financial transactions for each person with a permanent chronological numbering system. Each transaction includes amount, date, type (Money Given/Received), user who added, and comments, with automatic, real-time balance updates for individuals and overall totals. Utilizes Firestore for real-time synchronization and conflict resolution.
+- Overview Dashboard & Detail Views: Provide a central dashboard summarizing overall financial status (total pending balance, today's total transactions), and a list of people with their current balances and last transaction. Each person entry links to a detailed ledger view of their transaction history and comments.
+- Client-Side PDF Reporting: Allow users to generate and download PDF reports directly from the app. Reports can cover all transactions or specific person's transactions, including app name, date of export, person details (if applicable), a comprehensive transaction table (Sr. No., Date, Description, Category, Amount, Type, Added By), and a summary section (Total Income, Total Expenses, Net Balance).
+- Data Recovery & Admin Control: Implement a soft-delete system where deleted persons and transactions are moved to separate 'trash' collections in Firestore with a deleted flag. A hidden admin panel, accessible via a secret trigger and 2-step verification, allows privileged users to view and restore these soft-deleted items.
+- AI-Powered Transaction Categorization Tool: A generative AI tool that suggests relevant categories for new transaction entries based on their description, helping users to maintain consistent and accurate financial records.
+
+## Style Guidelines:
+
+- Primary Color: A professional, deep blue-purple (`#333399`). This hue evokes trust and clarity, providing a strong anchor for the interface in a light scheme.
+- Background Color: A very light, desaturated lilac-grey (`#F3F3FA`), subtly echoing the primary hue. This choice supports a clean, minimal aesthetic, ensuring legibility and focus on content.
+- Accent Color: A clear, vibrant sky blue (`#33A3CC`), analogous to the primary color but with higher saturation and brightness. This accent will be used to highlight interactive elements, calls to action, and convey recent activity. Functional color indicators (red for pending, green for settled, blue for recent activity) will be used contextually on specific elements.
+- Headlines and prominent text: 'Space Grotesk', a proportional sans-serif for a modern, tech-informed feel. Body text and longer content: 'Inter', a neutral grotesque-style sans-serif for excellent readability and objectivity.
+- Use a set of clear, minimalist icons that align with financial concepts and common UI actions. Icons for status indicators (e.g., 'Settled' checkmark) should be distinct and easily recognizable, adhering to the brand's clean aesthetic.
+- Employ a clean, grid-based, mobile-first layout with ample whitespace to ensure visual hierarchy and readability on small screens. Key information should be easily scannable, and interactive elements intuitively placed for efficient use.
+- Incorporate subtle and purposeful animations for state changes and real-time data updates. Examples include smooth transitions for loading states, adding new entries, and subtle feedback for interactive elements, enhancing the perception of speed and responsiveness without distraction.
