@@ -30,9 +30,9 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'chart.googleapis.com',
+        hostname: 'api.qrserver.com',
         port: '',
-        pathname: '/chart',
+        pathname: '/v1/create-qr-code/**',
       }
     ],
   },

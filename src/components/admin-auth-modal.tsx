@@ -186,7 +186,7 @@ export function AdminAuthModal() {
             <div className="flex flex-col items-center justify-center gap-4 py-4">
               {totpUri ? (
                 <Image
-                  src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(totpUri)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(totpUri)}&size=200x200`}
                   alt="TOTP QR Code"
                   width={200}
                   height={200}
