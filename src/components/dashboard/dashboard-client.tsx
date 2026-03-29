@@ -16,9 +16,10 @@ interface DashboardClientProps {
   persons: Person[];
   transactions: Transaction[];
   username: string;
+  onDataChange: () => void;
 }
 
-export function DashboardClient({ persons, transactions, username }: DashboardClientProps) {
+export function DashboardClient({ persons, transactions, username, onDataChange }: DashboardClientProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -160,7 +161,7 @@ export function DashboardClient({ persons, transactions, username }: DashboardCl
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full sm:w-[250px]"
               />
-              <AddPersonDialog username={username}>
+              <AddPersonDialog username={username} onComplete={onDataChange}>
                 <Button>
                   <UserPlus className="mr-2 h-4 w-4" /> Add Person
                 </Button>

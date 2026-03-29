@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AddTransactionDialog } from '@/components/add-transaction-dialog';
-import { Download, Edit, Trash2, ArrowLeft, IndianRupee, Phone, FileText } from 'lucide-react';
+import { Download, Edit, Trash2, ArrowLeft, Phone, FileText } from 'lucide-react';
 import type { Person, Transaction } from '@/lib/types';
 import Link from 'next/link';
 import { generatePersonPdf } from '@/lib/pdf';
@@ -22,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { deleteTransactionAction } from '@/lib/actions';
+import { deletePersonAction, deleteTransactionAction } from '@/lib/actions';
 import { useApp } from '@/hooks/use-app';
 
 interface PersonClientProps {
@@ -34,6 +35,7 @@ interface PersonClientProps {
 export function PersonClient({ person: initialPerson, transactions: initialTransactions, onDataChange }: PersonClientProps) {
   const { toast } = useToast();
   const { user } = useApp();
+  const router = useRouter();
 
   const { person, transactions, balance } = useMemo(() => {
     const sortedTransactions = [...initialTransactions].sort((a, b) => a.srNo - b.srNo);
@@ -64,6 +66,24 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
     });
   }
 
+  const handleDeletePerson = async () => {
+    if (!user) return;
+    try {
+      await deletePersonAction(person.id, user.username);
+      toast({
+        title: "Person Deleted",
+        description: `${person.name} has been moved to the trash.`,
+      });
+      router.push('/dashboard');
+    } catch(e) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete person."
+      });
+    }
+  }
+
   const handleDeleteTransaction = async (id: string) => {
     if (!user) return;
     try {
@@ -91,16 +111,35 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
       <Card className="mb-6">
         <CardHeader>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle className="font-headline text-3xl">{person.name}</CardTitle>
-              <CardDescription className="mt-2 flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
-                {person.phone && (
-                  <span className="flex items-center gap-2"><Phone className="h-4 w-4" /> {person.phone}</span>
-                )}
-                {person.notes && (
-                  <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> {person.notes}</span>
-                )}
-              </CardDescription>
+             <div className="flex items-center gap-4">
+                <div>
+                    <CardTitle className="font-headline text-3xl">{person.name}</CardTitle>
+                    <CardDescription className="mt-2 flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-1">
+                        {person.phone && (
+                        <span className="flex items-center gap-2"><Phone className="h-4 w-4" /> {person.phone}</span>
+                        )}
+                        {person.notes && (
+                        <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> {person.notes}</span>
+                        )}
+                    </CardDescription>
+                </div>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive"><Trash2 /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will move {person.name} and all their associated transactions to the trash. This action can be undone from the admin panel.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeletePerson} className="bg-destructive hover:bg-destructive/90">Delete Person</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Current Balance</p>

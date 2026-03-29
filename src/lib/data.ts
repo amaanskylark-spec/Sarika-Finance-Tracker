@@ -81,6 +81,7 @@ export class DataStore {
   // --- Auth ---
   login(username: string, password: string): User | null {
     const user = this.users.find(u => u.username === username);
+    // Bypassing password check for demo purposes
     if (user) {
       this.writeToSession(LOGGED_IN_USER_KEY, user);
       return user;
@@ -139,7 +140,21 @@ export class DataStore {
       this.persons[personIndex].deleted = true;
       this.persons[personIndex].deletedAt = Date.now();
       this.persons[personIndex].deletedBy = deletedBy;
+      
+      this.transactions = this.transactions.map(t => {
+        if (t.personId === id && !t.deleted) {
+          return {
+            ...t,
+            deleted: true,
+            deletedAt: Date.now(),
+            deletedBy: `CASCADE_DELETE_BY_${deletedBy}`,
+          };
+        }
+        return t;
+      });
+
       this.writeToStorage(PERSONS_KEY, this.persons);
+      this.writeToStorage(TRANSACTIONS_KEY, this.transactions);
     }
   }
 
@@ -174,14 +189,19 @@ export class DataStore {
     return this.transactions.find(t => t.id === id && (includeDeleted || !t.deleted));
   }
   
-  private async getNextSrNo(personId: string): Promise<number> {
-      const personTransactions = await this.getTransactionsByPersonId(personId);
+  private _getAllTransactionsByPersonId_includingDeleted(personId: string): Transaction[] {
+    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
+    return this.transactions.filter(t => t.personId === personId);
+  }
+
+  private getNextSrNo(personId: string): number {
+      const personTransactions = this._getAllTransactionsByPersonId_includingDeleted(personId);
       return personTransactions.length + 1;
   }
 
   async addTransaction(data: Omit<Transaction, 'id' | 'createdAt' | 'srNo' | 'deleted'>): Promise<Transaction> {
     const now = Date.now();
-    const srNo = await this.getNextSrNo(data.personId);
+    const srNo = this.getNextSrNo(data.personId);
     const newTransaction: Transaction = {
       id: `trx-${now}`,
       ...data,

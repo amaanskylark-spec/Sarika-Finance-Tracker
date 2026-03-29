@@ -24,10 +24,16 @@ export default function DashboardPage() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refreshData = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   useEffect(() => {
     if (isDataReady) {
       if (user && store) {
+        setIsLoading(true);
         Promise.all([
           store.getPersons(),
           store.getAllTransactions()
@@ -41,7 +47,7 @@ export default function DashboardPage() {
         setIsLoading(false);
       }
     }
-  }, [isDataReady, user, store]);
+  }, [isDataReady, user, store, refreshKey]);
 
   if (!isDataReady || isLoading) {
     return <DashboardFallback />;
@@ -54,6 +60,6 @@ export default function DashboardPage() {
   }
 
   return (
-    <DashboardClient persons={persons} transactions={transactions} username={user.username} />
+    <DashboardClient persons={persons} transactions={transactions} username={user.username} onDataChange={refreshData} />
   );
 }
