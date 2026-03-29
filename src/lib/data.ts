@@ -79,8 +79,8 @@ export class DataStore {
 
   // --- Auth ---
   login(username: string, password: string): User | null {
-    // NOTE: Hardcoded password for demo purposes
-    const user = this.users.find(u => u.username === username && password === 'password');
+    // NOTE: Hardcoded password check removed for demo purposes
+    const user = this.users.find(u => u.username === username);
     if (user) {
       this.writeToSession(LOGGED_IN_USER_KEY, user);
       return user;
