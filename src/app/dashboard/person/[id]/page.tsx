@@ -21,6 +21,11 @@ export default function PersonDetailPage({ params }: { params: { id: string } })
     const { store, isDataReady } = useApp();
     const [person, setPerson] = useState<Person | null | undefined>(undefined);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [refreshKey, setRefreshKey] = useState(0);
+
+    const refreshData = () => {
+        setRefreshKey(prev => prev + 1);
+    }
     
     useEffect(() => {
         const loadData = async () => {
@@ -39,7 +44,7 @@ export default function PersonDetailPage({ params }: { params: { id: string } })
         if (isDataReady) {
             loadData();
         }
-    }, [isDataReady, store, params.id]);
+    }, [isDataReady, store, params.id, refreshKey]);
 
     if (person === undefined) {
         return <PersonDetailFallback />;
@@ -52,6 +57,6 @@ export default function PersonDetailPage({ params }: { params: { id: string } })
     // person is defined and not null here, so it is a Person object.
     // The explicit cast is to satisfy TypeScript.
     return (
-        <PersonClient person={person as Person} transactions={transactions} />
+        <PersonClient person={person as Person} transactions={transactions} onDataChange={refreshData} />
     );
 }

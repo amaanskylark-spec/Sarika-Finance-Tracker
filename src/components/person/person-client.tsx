@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -29,12 +28,12 @@ import { useApp } from '@/hooks/use-app';
 interface PersonClientProps {
   person: Person;
   transactions: Transaction[];
+  onDataChange: () => void;
 }
 
-export function PersonClient({ person: initialPerson, transactions: initialTransactions }: PersonClientProps) {
+export function PersonClient({ person: initialPerson, transactions: initialTransactions, onDataChange }: PersonClientProps) {
   const { toast } = useToast();
   const { user } = useApp();
-  const router = useRouter();
 
   const { person, transactions, balance } = useMemo(() => {
     const sortedTransactions = [...initialTransactions].sort((a, b) => a.srNo - b.srNo);
@@ -73,7 +72,7 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
         title: "Transaction Deleted",
         description: "The transaction has been moved to the trash."
       });
-      router.refresh();
+      onDataChange();
     } catch(e) {
       toast({
         variant: "destructive",
@@ -119,7 +118,7 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
               <Button variant="outline" onClick={handleDownloadPdf}>
                 <Download className="mr-2 h-4 w-4" /> Download PDF
               </Button>
-              <AddTransactionDialog personId={person.id}>
+              <AddTransactionDialog personId={person.id} onTransactionComplete={onDataChange}>
                 <Button>Add Transaction</Button>
               </AddTransactionDialog>
             </div>
@@ -159,7 +158,7 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
                     </TableCell>
                     <TableCell>{t.addedBy}</TableCell>
                     <TableCell className="flex gap-2">
-                       <AddTransactionDialog personId={person.id} transaction={t}>
+                       <AddTransactionDialog personId={person.id} transaction={t} onTransactionComplete={onDataChange}>
                          <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
                        </AddTransactionDialog>
                         <AlertDialog>
