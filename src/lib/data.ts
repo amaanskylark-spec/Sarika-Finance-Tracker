@@ -116,21 +116,24 @@ export async function getPersonById(id: string): Promise<Person | undefined> {
 
 export async function addPerson(data: Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'deleted'>): Promise<Person> {
   const now = Date.now();
+  const initialBalanceValue = data.initialBalance;
+
   const newPerson: Person = {
     id: `person-${now}`,
     ...data,
+    initialBalance: 0, // Set to 0 to prevent double counting
     createdAt: now,
     updatedAt: now,
-    deleted: false
+    deleted: false,
   };
   persons.push(newPerson);
   writeToStorage(PERSONS_KEY, persons);
 
-  if (newPerson.initialBalance !== 0) {
+  if (initialBalanceValue !== 0) {
     const initialTransaction: Omit<Transaction, 'id' | 'createdAt' | 'srNo' | 'deleted'> = {
       personId: newPerson.id,
-      amount: Math.abs(newPerson.initialBalance),
-      type: newPerson.initialBalance > 0 ? 'expense' : 'income',
+      amount: Math.abs(initialBalanceValue),
+      type: initialBalanceValue > 0 ? 'expense' : 'income',
       date: now - 1, // Ensure initial balance is the very first transaction
       description: 'Initial Balance',
       category: 'Opening Balance',
