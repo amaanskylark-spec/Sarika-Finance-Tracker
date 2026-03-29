@@ -34,7 +34,7 @@ export function generatePersonPdf(person: Person, transactions: Transaction[], b
 
   transactions.forEach(t => {
     const transactionData = [
-      t.srNo,
+      t.srNo === 0 ? 'Initial' : t.srNo,
       new Date(t.date).toLocaleDateString(),
       t.description,
       t.category || "-",
@@ -54,7 +54,7 @@ export function generatePersonPdf(person: Person, transactions: Transaction[], b
   // Summary
   const finalY = doc.autoTable.previous.finalY;
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-  const totalExpense = person.initialBalance + transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
+  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
 
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
@@ -62,7 +62,7 @@ export function generatePersonPdf(person: Person, transactions: Transaction[], b
   
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Total Given / Initial Balance: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(totalExpense)}`, 14, finalY + 22);
+  doc.text(`Total Given: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(totalExpense)}`, 14, finalY + 22);
   doc.text(`Total Received: ${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(totalIncome)}`, 14, finalY + 29);
   
   doc.setFont('helvetica', 'bold');
