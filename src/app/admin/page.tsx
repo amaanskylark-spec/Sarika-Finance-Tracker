@@ -39,6 +39,9 @@ export default function AdminPage() {
   const [deletedPersons, setDeletedPersons] = useState<Person[]>([]);
   const [deletedTransactions, setDeletedTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refreshData = () => setRefreshKey(prev => prev + 1);
 
   useEffect(() => {
     async function loadDeletedItems() {
@@ -56,7 +59,7 @@ export default function AdminPage() {
     if (isDataReady) {
       loadDeletedItems();
     }
-  }, [store, isDataReady]);
+  }, [store, isDataReady, refreshKey]);
 
   if (!isDataReady || isLoading) {
     return <AdminPageFallback />;
@@ -80,10 +83,10 @@ export default function AdminPage() {
                             <TabsTrigger value="transactions">Deleted Transactions</TabsTrigger>
                         </TabsList>
                         <TabsContent value="persons" className="p-4">
-                           <DeletedList items={deletedPersons} type="person" />
+                           <DeletedList items={deletedPersons} type="person" onRestore={refreshData} />
                         </TabsContent>
                         <TabsContent value="transactions" className="p-4">
-                           <DeletedList items={deletedTransactions} type="transaction" />
+                           <DeletedList items={deletedTransactions} type="transaction" onRestore={refreshData} />
                         </TabsContent>
                     </Tabs>
                 </CardContent>

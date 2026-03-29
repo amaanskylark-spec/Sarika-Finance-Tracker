@@ -2,6 +2,7 @@
 
 import type { User, Person, Transaction } from './types';
 
+// Keys for localStorage
 const USERS_KEY = 'sarkia_users';
 const PERSONS_KEY = 'sarkia_persons';
 const TRANSACTIONS_KEY = 'sarkia_transactions';
@@ -11,255 +12,270 @@ const LOGGED_IN_USER_KEY = 'sarkia_loggedInUser';
 const defaultUsers: User[] = [
   { id: 'user-1', username: 'WasimShaikh' },
 ];
-
 const defaultPersons: Person[] = [];
 const defaultTransactions: Transaction[] = [];
 
-export class DataStore {
-  private users: User[];
-  private persons: Person[];
-  private transactions: Transaction[];
+// In-memory cache
+let users: User[] = [];
+let persons: Person[] = [];
+let transactions: Transaction[] = [];
+let isInitialized = false;
 
-  constructor() {
-    this.users = this.readFromStorage(USERS_KEY, defaultUsers);
-    this.persons = this.readFromStorage(PERSONS_KEY, defaultPersons);
-    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, defaultTransactions);
-  }
+// Helper functions for storage
+function isServer(): boolean {
+  return typeof window === 'undefined';
+}
 
-  private isServer(): boolean {
-    return typeof window === 'undefined';
+function readFromStorage<T>(key: string, defaultValue: T): T {
+  if (isServer()) {
+    return defaultValue;
   }
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.warn(`Error reading localStorage key “${key}”:`, error);
+    return defaultValue;
+  }
+}
 
-  private readFromStorage<T>(key: string, defaultValue: T): T {
-    if (this.isServer()) {
-        return defaultValue;
-    }
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
-    } catch (error) {
-      console.warn(`Error reading localStorage key “${key}”:`, error);
-      return defaultValue;
-    }
+function writeToStorage<T>(key: string, value: T) {
+  if (isServer()) {
+    return;
   }
-
-  private writeToStorage<T>(key: string, value: T) {
-    if (this.isServer()) {
-        return;
-    }
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.warn(`Error writing to localStorage key “${key}”:`, error);
-    }
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn(`Error writing to localStorage key “${key}”:`, error);
   }
+}
   
-  private readFromSession<T>(key: string, defaultValue: T): T {
-    if (this.isServer()) {
-      return defaultValue;
-    }
-    try {
-      const item = sessionStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultValue;
-    } catch (error) {
-      console.warn(`Error reading sessionStorage key “${key}”:`, error);
-      return defaultValue;
-    }
+function readFromSession<T>(key: string, defaultValue: T): T {
+  if (isServer()) {
+    return defaultValue;
   }
-
-  private writeToSession<T>(key: string, value: T) {
-    if (this.isServer()) {
-      return;
-    }
-    try {
-      sessionStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.warn(`Error writing to sessionStorage key “${key}”:`, error);
-    }
+  try {
+    const item = sessionStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch (error) {
+    console.warn(`Error reading sessionStorage key “${key}”:`, error);
+    return defaultValue;
   }
+}
 
-  // --- Auth ---
-  login(username: string, password: string): User | null {
-    const user = this.users.find(u => u.username === username);
-    // Bypassing password check for demo purposes
-    if (user) {
-      this.writeToSession(LOGGED_IN_USER_KEY, user);
-      return user;
-    }
-    return null;
+function writeToSession<T>(key: string, value: T) {
+  if (isServer()) {
+    return;
   }
-
-  logout() {
-    if (!this.isServer()) {
-        sessionStorage.removeItem(LOGGED_IN_USER_KEY);
-    }
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn(`Error writing to sessionStorage key “${key}”:`, error);
   }
+}
 
-  getLoggedInUser(): User | null {
-    return this.readFromSession(LOGGED_IN_USER_KEY, null);
+// Initialization function
+export function initDataStore() {
+    if (isInitialized || isServer()) return;
+    users = readFromStorage(USERS_KEY, defaultUsers);
+    persons = readFromStorage(PERSONS_KEY, defaultPersons);
+    transactions = readFromStorage(TRANSACTIONS_KEY, defaultTransactions);
+    isInitialized = true;
+}
+
+// --- Auth ---
+export function login(username: string, password: string): User | null {
+  initDataStore(); // Ensure data is loaded
+  const user = users.find(u => u.username === username);
+  // Bypassing password check for demo purposes
+  if (user) {
+    writeToSession(LOGGED_IN_USER_KEY, user);
+    return user;
   }
+  return null;
+}
 
-  // --- Persons ---
-  async getPersons(): Promise<Person[]> {
-    return this.persons.filter(p => !p.deleted);
+export function logout() {
+  if (!isServer()) {
+    sessionStorage.removeItem(LOGGED_IN_USER_KEY);
   }
+}
 
-  async getPersonById(id: string): Promise<Person | undefined> {
-    return this.persons.find(p => p.id === id && !p.deleted);
-  }
+export function getLoggedInUser(): User | null {
+  return readFromSession(LOGGED_IN_USER_KEY, null);
+}
 
-  async addPerson(data: Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'deleted'>): Promise<Person> {
-    const now = Date.now();
-    const newPerson: Person = {
-      id: `person-${now}`,
-      ...data,
-      createdAt: now,
-      updatedAt: now,
-      deleted: false
+// --- Persons ---
+export async function getPersons(): Promise<Person[]> {
+  return persons.filter(p => !p.deleted);
+}
+
+export async function getPersonById(id: string): Promise<Person | undefined> {
+  return persons.find(p => p.id === id && !p.deleted);
+}
+
+export async function addPerson(data: Omit<Person, 'id' | 'createdAt' | 'updatedAt' | 'deleted'>): Promise<Person> {
+  const now = Date.now();
+  const newPerson: Person = {
+    id: `person-${now}`,
+    ...data,
+    createdAt: now,
+    updatedAt: now,
+    deleted: false
+  };
+  persons.push(newPerson);
+  writeToStorage(PERSONS_KEY, persons);
+
+  if (newPerson.initialBalance !== 0) {
+    const initialTransaction: Omit<Transaction, 'id' | 'createdAt' | 'srNo' | 'deleted'> = {
+      personId: newPerson.id,
+      amount: Math.abs(newPerson.initialBalance),
+      type: newPerson.initialBalance > 0 ? 'expense' : 'income',
+      date: now - 1, // Ensure initial balance is the very first transaction
+      description: 'Initial Balance',
+      category: 'Opening Balance',
+      addedBy: newPerson.addedBy,
     };
-    this.persons.push(newPerson);
-    this.writeToStorage(PERSONS_KEY, this.persons);
-
-    // If there's an initial balance, create the initial transaction
-    if (newPerson.initialBalance !== 0) {
-      const initialTransaction: Omit<Transaction, 'id' | 'createdAt' | 'srNo' | 'deleted'> = {
-        personId: newPerson.id,
-        amount: Math.abs(newPerson.initialBalance),
-        type: newPerson.initialBalance > 0 ? 'expense' : 'income',
-        date: now,
-        description: 'Initial Balance',
-        category: 'Opening Balance',
-        addedBy: newPerson.addedBy,
-      };
-      await this.addTransaction(initialTransaction);
-    }
-    
-    return newPerson;
+    await addTransaction(initialTransaction);
   }
   
-  async updatePerson(id: string, data: Partial<Person>): Promise<Person | undefined> {
-    const personIndex = this.persons.findIndex(p => p.id === id);
-    if(personIndex > -1) {
-      this.persons[personIndex] = { ...this.persons[personIndex], ...data, updatedAt: Date.now() };
-      this.writeToStorage(PERSONS_KEY, this.persons);
-      return this.persons[personIndex];
-    }
-    return undefined;
+  return newPerson;
+}
+  
+export async function updatePerson(id: string, data: Partial<Person>): Promise<Person | undefined> {
+  const personIndex = persons.findIndex(p => p.id === id);
+  if(personIndex > -1) {
+    persons[personIndex] = { ...persons[personIndex], ...data, updatedAt: Date.now() };
+    writeToStorage(PERSONS_KEY, persons);
+    return persons[personIndex];
   }
+  return undefined;
+}
 
-  async deletePerson(id: string, deletedBy: string): Promise<void> {
-    const personIndex = this.persons.findIndex(p => p.id === id);
-    if(personIndex > -1) {
-      this.persons[personIndex].deleted = true;
-      this.persons[personIndex].deletedAt = Date.now();
-      this.persons[personIndex].deletedBy = deletedBy;
-      
-      this.transactions = this.transactions.map(t => {
-        if (t.personId === id && !t.deleted) {
-          return {
-            ...t,
-            deleted: true,
-            deletedAt: Date.now(),
-            deletedBy: `CASCADE_DELETE_BY_${deletedBy}`,
-          };
+export async function deletePerson(id: string, deletedBy: string): Promise<void> {
+  const personIndex = persons.findIndex(p => p.id === id);
+  if(personIndex > -1) {
+    persons[personIndex].deleted = true;
+    persons[personIndex].deletedAt = Date.now();
+    persons[personIndex].deletedBy = deletedBy;
+    
+    transactions = transactions.map(t => {
+      if (t.personId === id && !t.deleted) {
+        return {
+          ...t,
+          deleted: true,
+          deletedAt: Date.now(),
+          deletedBy: `CASCADE_DELETE_BY_${deletedBy}`,
+        };
+      }
+      return t;
+    });
+
+    writeToStorage(PERSONS_KEY, persons);
+    writeToStorage(TRANSACTIONS_KEY, transactions);
+  }
+}
+
+export async function getDeletedPersons(): Promise<Person[]> {
+    return persons.filter(p => p.deleted);
+}
+
+export async function restorePerson(id: string): Promise<void> {
+  const personIndex = persons.findIndex(p => p.id === id);
+  if(personIndex > -1) {
+    persons[personIndex].deleted = false;
+    delete persons[personIndex].deletedAt;
+    delete persons[personIndex].deletedBy;
+    this.writeToStorage(PERSONS_KEY, persons);
+
+    // also restore transactions
+    transactions = transactions.map(t => {
+        if (t.personId === id && t.deletedBy === `CASCADE_DELETE_BY_${persons[personIndex].deletedBy}`) {
+            const restoredT = { ...t };
+            delete restoredT.deleted;
+            delete restoredT.deletedAt;
+            delete restoredT.deletedBy;
+            return restoredT;
         }
         return t;
-      });
-
-      this.writeToStorage(PERSONS_KEY, this.persons);
-      this.writeToStorage(TRANSACTIONS_KEY, this.transactions);
-    }
+    });
+    writeToStorage(TRANSACTIONS_KEY, transactions);
   }
+}
 
-  async getDeletedPersons(): Promise<Person[]> {
-      return this.persons.filter(p => p.deleted);
-  }
+// --- Transactions ---
+export async function getAllTransactions(): Promise<Transaction[]> {
+  return transactions.filter(t => !t.deleted);
+}
 
-  async restorePerson(id: string): Promise<void> {
-    const personIndex = this.persons.findIndex(p => p.id === id);
-    if(personIndex > -1) {
-      this.persons[personIndex].deleted = false;
-      delete this.persons[personIndex].deletedAt;
-      delete this.persons[personIndex].deletedBy;
-      this.writeToStorage(PERSONS_KEY, this.persons);
-    }
-  }
+export async function getTransactionsByPersonId(personId: string): Promise<Transaction[]> {
+  return transactions.filter(t => t.personId === personId && !t.deleted);
+}
 
-  // --- Transactions ---
-  async getAllTransactions(): Promise<Transaction[]> {
-    return this.transactions.filter(t => !t.deleted);
-  }
-
-  async getTransactionsByPersonId(personId: string): Promise<Transaction[]> {
-    return this.transactions.filter(t => t.personId === personId && !t.deleted);
-  }
-
-  async getTransactionById(id: string, includeDeleted = false): Promise<Transaction | undefined> {
-    return this.transactions.find(t => t.id === id && (includeDeleted || !t.deleted));
-  }
+export async function getTransactionById(id: string, includeDeleted = false): Promise<Transaction | undefined> {
+  return transactions.find(t => t.id === id && (includeDeleted || !t.deleted));
+}
   
-  private _getAllTransactionsByPersonId_includingDeleted(personId: string): Transaction[] {
-    return this.transactions.filter(t => t.personId === personId);
-  }
+function _getAllTransactionsByPersonId_includingDeleted(personId: string): Transaction[] {
+  return transactions.filter(t => t.personId === personId);
+}
 
-  private getNextSrNo(personId: string): number {
-      const personTransactions = this._getAllTransactionsByPersonId_includingDeleted(personId);
-      return personTransactions.length + 1;
-  }
+function getNextSrNo(personId: string): number {
+    const personTransactions = _getAllTransactionsByPersonId_includingDeleted(personId);
+    return personTransactions.length + 1;
+}
 
-  async addTransaction(data: Omit<Transaction, 'id' | 'createdAt' | 'srNo' | 'deleted'>): Promise<Transaction> {
-    const now = Date.now();
-    const srNo = this.getNextSrNo(data.personId);
-    const newTransaction: Transaction = {
-      id: `trx-${now}`,
-      ...data,
-      srNo,
-      createdAt: now,
-      deleted: false
-    };
-    this.transactions.push(newTransaction);
-    this.writeToStorage(TRANSACTIONS_KEY, this.transactions);
+export async function addTransaction(data: Omit<Transaction, 'id' | 'createdAt' | 'srNo' | 'deleted'>): Promise<Transaction> {
+  const now = Date.now();
+  const srNo = getNextSrNo(data.personId);
+  const newTransaction: Transaction = {
+    id: `trx-${now}`,
+    ...data,
+    srNo,
+    createdAt: now,
+    deleted: false
+  };
+  transactions.push(newTransaction);
+  writeToStorage(TRANSACTIONS_KEY, transactions);
     
-    // also update person's updatedAt
-    await this.updatePerson(data.personId, {});
+  await updatePerson(data.personId, {});
 
-    return newTransaction;
+  return newTransaction;
+}
+
+export async function updateTransaction(id: string, data: Partial<Transaction>): Promise<Transaction | undefined> {
+  const trxIndex = transactions.findIndex(t => t.id === id);
+  if (trxIndex > -1) {
+      transactions[trxIndex] = { ...transactions[trxIndex], ...data };
+      writeToStorage(TRANSACTIONS_KEY, transactions);
+      await updatePerson(transactions[trxIndex].personId, {});
+      return transactions[trxIndex];
   }
+  return undefined;
+}
 
-  async updateTransaction(id: string, data: Partial<Transaction>): Promise<Transaction | undefined> {
-    const trxIndex = this.transactions.findIndex(t => t.id === id);
-    if (trxIndex > -1) {
-        this.transactions[trxIndex] = { ...this.transactions[trxIndex], ...data };
-        this.writeToStorage(TRANSACTIONS_KEY, this.transactions);
-        await this.updatePerson(this.transactions[trxIndex].personId, {});
-        return this.transactions[trxIndex];
-    }
-    return undefined;
+export async function deleteTransaction(id: string, deletedBy: string): Promise<void> {
+  const trxIndex = transactions.findIndex(t => t.id === id);
+  if (trxIndex > -1) {
+      transactions[trxIndex].deleted = true;
+      transactions[trxIndex].deletedAt = Date.now();
+      transactions[trxIndex].deletedBy = deletedBy;
+      writeToStorage(TRANSACTIONS_KEY, transactions);
+      await updatePerson(transactions[trxIndex].personId, {});
   }
+}
 
-  async deleteTransaction(id: string, deletedBy: string): Promise<void> {
-    const trxIndex = this.transactions.findIndex(t => t.id === id);
-    if (trxIndex > -1) {
-        this.transactions[trxIndex].deleted = true;
-        this.transactions[trxIndex].deletedAt = Date.now();
-        this.transactions[trxIndex].deletedBy = deletedBy;
-        this.writeToStorage(TRANSACTIONS_KEY, this.transactions);
-        await this.updatePerson(this.transactions[trxIndex].personId, {});
-    }
-  }
+export async function getDeletedTransactions(): Promise<Transaction[]> {
+    return transactions.filter(t => t.deleted);
+}
 
-  async getDeletedTransactions(): Promise<Transaction[]> {
-      return this.transactions.filter(t => t.deleted);
-  }
-
-  async restoreTransaction(id: string): Promise<void> {
-    const trxIndex = this.transactions.findIndex(t => t.id === id);
-    if (trxIndex > -1) {
-        this.transactions[trxIndex].deleted = false;
-        delete this.transactions[trxIndex].deletedAt;
-        delete this.transactions[trxIndex].deletedBy;
-        this.writeToStorage(TRANSACTIONS_KEY, this.transactions);
-        await this.updatePerson(this.transactions[trxIndex].personId, {});
-    }
+export async function restoreTransaction(id: string): Promise<void> {
+  const trxIndex = transactions.findIndex(t => t.id === id);
+  if (trxIndex > -1) {
+      transactions[trxIndex].deleted = false;
+      delete transactions[trxIndex].deletedAt;
+      delete transactions[trxIndex].deletedBy;
+      writeToStorage(TRANSACTIONS_KEY, transactions);
+      await updatePerson(transactions[trxIndex].personId, {});
   }
 }

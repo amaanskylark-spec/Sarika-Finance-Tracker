@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -13,11 +12,11 @@ type Item = Person | Transaction;
 interface DeletedListProps<T extends Item> {
   items: T[];
   type: 'person' | 'transaction';
+  onRestore: () => void;
 }
 
-export function DeletedList<T extends Item>({ items, type }: DeletedListProps<T>) {
+export function DeletedList<T extends Item>({ items, type, onRestore }: DeletedListProps<T>) {
   const { toast } = useToast();
-  const router = useRouter();
 
   const handleRestore = async (id: string) => {
     try {
@@ -30,7 +29,7 @@ export function DeletedList<T extends Item>({ items, type }: DeletedListProps<T>
         title: 'Item Restored',
         description: `The ${type} has been successfully restored.`,
       });
-      router.refresh();
+      onRestore();
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -101,7 +100,7 @@ export function DeletedList<T extends Item>({ items, type }: DeletedListProps<T>
                 items.map(item => type === 'person' ? renderPersonRow(item as Person) : renderTransactionRow(item as Transaction))
                 ) : (
                 <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                     No deleted {type}s.
                     </TableCell>
                 </TableRow>
