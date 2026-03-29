@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AddPersonDialog } from '@/components/add-person-dialog';
-import Link from 'next/link';
 import { ArrowDownUp, ArrowUp, ArrowDown, UserPlus, TrendingUp, TrendingDown, IndianRupee } from 'lucide-react';
 import type { Person, Transaction, SortKey, SortDirection } from '@/lib/types';
 
@@ -22,6 +22,7 @@ export function DashboardClient({ persons, transactions, username }: DashboardCl
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const router = useRouter();
 
   const summary = useMemo(() => {
     const totalGiven = transactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
@@ -185,8 +186,11 @@ export function DashboardClient({ persons, transactions, username }: DashboardCl
             </TableHeader>
             <TableBody>
               {filteredAndSortedPersons.map((person) => (
-                <TableRow key={person.id} className="cursor-pointer" asChild>
-                   <Link href={`/dashboard/person/${person.id}`}>
+                <TableRow 
+                  key={person.id} 
+                  className="cursor-pointer"
+                  onClick={() => router.push(`/dashboard/person/${person.id}`)}
+                >
                     <TableCell className="font-medium">{person.name}</TableCell>
                     <TableCell className={`text-right font-semibold ${getBalanceColor(person.balance)}`}>{formatCurrency(person.balance)}</TableCell>
                     <TableCell>
@@ -199,7 +203,6 @@ export function DashboardClient({ persons, transactions, username }: DashboardCl
                     <TableCell className="hidden md:table-cell">
                       {person.lastTransaction ? `${new Date(person.lastTransaction.date).toLocaleDateString()}: ${formatCurrency(person.lastTransaction.amount)} (${person.lastTransaction.type})` : 'No transactions'}
                     </TableCell>
-                   </Link>
                 </TableRow>
               ))}
             </TableBody>
