@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -33,6 +34,7 @@ interface PersonClientProps {
 export function PersonClient({ person: initialPerson, transactions: initialTransactions }: PersonClientProps) {
   const { toast } = useToast();
   const { user } = useApp();
+  const router = useRouter();
 
   const { person, transactions, balance } = useMemo(() => {
     const sortedTransactions = [...initialTransactions].sort((a, b) => a.srNo - b.srNo);
@@ -71,6 +73,7 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
         title: "Transaction Deleted",
         description: "The transaction has been moved to the trash."
       });
+      router.refresh();
     } catch(e) {
       toast({
         variant: "destructive",

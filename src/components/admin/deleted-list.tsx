@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +17,7 @@ interface DeletedListProps<T extends Item> {
 
 export function DeletedList<T extends Item>({ items, type }: DeletedListProps<T>) {
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleRestore = async (id: string) => {
     try {
@@ -28,6 +30,7 @@ export function DeletedList<T extends Item>({ items, type }: DeletedListProps<T>
         title: 'Item Restored',
         description: `The ${type} has been successfully restored.`,
       });
+      router.refresh();
     } catch (error) {
       toast({
         variant: 'destructive',

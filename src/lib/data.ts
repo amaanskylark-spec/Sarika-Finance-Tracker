@@ -1,3 +1,4 @@
+'use client';
 
 import type { User, Person, Transaction } from './types';
 
@@ -79,7 +80,6 @@ export class DataStore {
 
   // --- Auth ---
   login(username: string, password: string): User | null {
-    // NOTE: Hardcoded password check removed for demo purposes
     const user = this.users.find(u => u.username === username);
     if (user) {
       this.writeToSession(LOGGED_IN_USER_KEY, user);
@@ -100,10 +100,12 @@ export class DataStore {
 
   // --- Persons ---
   async getPersons(): Promise<Person[]> {
+    this.persons = this.readFromStorage(PERSONS_KEY, this.persons);
     return this.persons.filter(p => !p.deleted);
   }
 
   async getPersonById(id: string): Promise<Person | undefined> {
+    this.persons = this.readFromStorage(PERSONS_KEY, this.persons);
     return this.persons.find(p => p.id === id && !p.deleted);
   }
 
@@ -142,6 +144,7 @@ export class DataStore {
   }
 
   async getDeletedPersons(): Promise<Person[]> {
+      this.persons = this.readFromStorage(PERSONS_KEY, this.persons);
       return this.persons.filter(p => p.deleted);
   }
 
@@ -157,14 +160,17 @@ export class DataStore {
 
   // --- Transactions ---
   async getAllTransactions(): Promise<Transaction[]> {
+    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
     return this.transactions.filter(t => !t.deleted);
   }
 
   async getTransactionsByPersonId(personId: string): Promise<Transaction[]> {
+    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
     return this.transactions.filter(t => t.personId === personId && !t.deleted);
   }
 
   async getTransactionById(id: string, includeDeleted = false): Promise<Transaction | undefined> {
+    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
     return this.transactions.find(t => t.id === id && (includeDeleted || !t.deleted));
   }
   
@@ -215,6 +221,7 @@ export class DataStore {
   }
 
   async getDeletedTransactions(): Promise<Transaction[]> {
+      this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
       return this.transactions.filter(t => t.deleted);
   }
 

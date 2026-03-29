@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, type SubmitHandler, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -54,6 +55,7 @@ export function AddTransactionDialog({ children, personId, transaction }: AddTra
 
   const { toast } = useToast();
   const { user } = useApp();
+  const router = useRouter();
 
   const isEditMode = !!transaction;
 
@@ -128,6 +130,7 @@ export function AddTransactionDialog({ children, personId, transaction }: AddTra
           description: `A new transaction has been added.`,
         });
       }
+      router.refresh();
       reset({ type: 'expense', date: new Date() });
       setAiSuggestions([]);
       setOpen(false);

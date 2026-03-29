@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -39,6 +40,7 @@ export function AddPersonDialog({ children, username }: AddPersonDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const {
     register,
@@ -60,6 +62,7 @@ export function AddPersonDialog({ children, username }: AddPersonDialogProps) {
         title: 'Person Added',
         description: `${data.name} has been added to your list.`,
       });
+      router.refresh();
       reset();
       setOpen(false);
     } catch (error) {
