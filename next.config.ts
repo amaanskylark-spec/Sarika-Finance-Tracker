@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'chart.googleapis.com',
+        port: '',
+        pathname: '/chart',
+      }
     ],
   },
 };

@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useApp } from '@/hooks/use-app';
 import { Loader2 } from 'lucide-react';
 import * as OTPAuth from 'otpauth';
+import Image from 'next/image';
 
 const step1Schema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -40,6 +41,7 @@ export function AdminAuthModal() {
   const { isAdminAuthModalOpen, setAdminAuthModalOpen, adminLogin, store } = useApp();
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [totpUri, setTotpUri] = useState('');
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lockoutTime, setLockoutTime] = useState(0);
   const { toast } = useToast();
@@ -80,11 +82,30 @@ export function AdminAuthModal() {
   const onStep1Submit: SubmitHandler<Step1Inputs> = async (data) => {
     setIsLoading(true);
     if (data.username === ADMIN_USERNAME && data.password === ADMIN_PASSWORD) {
-      setStep(2);
+        const isTotpSetup = localStorage.getItem('sarkia_admin_totp_setup') === 'true';
+        if (isTotpSetup) {
+            setStep(3);
+        } else {
+            const totp = new OTPAuth.TOTP({
+                issuer: 'Sarkia',
+                label: 'Admin',
+                algorithm: 'SHA1',
+                digits: 6,
+                period: 30,
+                secret: TOTP_SECRET,
+            });
+            setTotpUri(totp.toString());
+            setStep(2);
+        }
     } else {
       toast({ variant: 'destructive', title: 'Error', description: 'Invalid admin credentials.' });
     }
     setIsLoading(false);
+  };
+
+  const handleProceedToVerification = () => {
+    localStorage.setItem('sarkia_admin_totp_setup', 'true');
+    setStep(3);
   };
   
   const onStep2Submit: SubmitHandler<Step2Inputs> = async (data) => {
@@ -131,7 +152,7 @@ export function AdminAuthModal() {
           <form onSubmit={handleSubmitStep1(onStep1Submit)}>
             <DialogHeader>
               <DialogTitle className="font-headline">Admin Login</DialogTitle>
-              <DialogDescription>Step 1: Enter your admin credentials.</DialogDescription>
+              <DialogDescription>Enter your admin credentials.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
@@ -155,10 +176,40 @@ export function AdminAuthModal() {
           </form>
         )}
         {step === 2 && (
+          <div>
+            <DialogHeader>
+              <DialogTitle className="font-headline">Set Up Two-Factor Authentication</DialogTitle>
+              <DialogDescription>
+                Scan this QR code with your authenticator app (e.g., Google Authenticator).
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center justify-center gap-4 py-4">
+              {totpUri ? (
+                <Image
+                  src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(totpUri)}`}
+                  alt="TOTP QR Code"
+                  width={200}
+                  height={200}
+                />
+              ) : (
+                <Loader2 className="h-10 w-10 animate-spin" />
+              )}
+              <p className="text-sm text-muted-foreground">Or manually enter this key:</p>
+              <code className="rounded bg-muted px-2 py-1 font-mono text-sm">{TOTP_SECRET}</code>
+            </div>
+            <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => setStep(1)}>Back</Button>
+                <Button type="button" onClick={handleProceedToVerification}>
+                    Continue to Verification
+                </Button>
+            </DialogFooter>
+          </div>
+        )}
+        {step === 3 && (
           <form onSubmit={handleSubmitStep2(onStep2Submit)}>
             <DialogHeader>
               <DialogTitle className="font-headline">Two-Step Verification</DialogTitle>
-              <DialogDescription>Step 2: Enter the 6-digit code from your authenticator app.</DialogDescription>
+              <DialogDescription>Enter the 6-digit code from your authenticator app.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
