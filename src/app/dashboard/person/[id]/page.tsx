@@ -2,10 +2,17 @@
 
 import { PersonClient } from "@/components/person/person-client";
 import { notFound } from "next/navigation";
-import { useEffect, useState, use } from "react";
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApp } from "@/hooks/use-app";
 import type { Person, Transaction } from "@/lib/types";
+
+// This function is required for static export. It tells Next.js that there are
+// no person pages to pre-render at build time. All person pages will be
+// rendered on the client.
+export async function generateStaticParams() {
+  return [];
+}
 
 function PersonDetailFallback() {
     return (
@@ -18,7 +25,7 @@ function PersonDetailFallback() {
 }
 
 export default function PersonDetailPage({ params }: { params: { id: string } }) {
-    const { id } = use(params);
+    const { id } = params;
     const { store, isDataReady } = useApp();
     const [person, setPerson] = useState<Person | null | undefined>(undefined);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
