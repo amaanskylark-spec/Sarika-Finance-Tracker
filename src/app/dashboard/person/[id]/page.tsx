@@ -1,10 +1,11 @@
-import { DataStore } from "@/lib/data";
+'use client';
+
 import { PersonClient } from "@/components/person/person-client";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-
-export const dynamic = 'force-dynamic';
+import { useApp } from "@/hooks/use-app";
+import type { Person, Transaction } from "@/lib/types";
 
 function PersonDetailFallback() {
     return (
@@ -16,19 +17,41 @@ function PersonDetailFallback() {
     );
 }
 
-export default async function PersonDetailPage({ params }: { params: { id: string } }) {
-  const store = new DataStore();
-  const person = await store.getPersonById(params.id);
-  
-  if (!person) {
-    notFound();
-  }
-  
-  const transactions = await store.getTransactionsByPersonId(params.id);
+export default function PersonDetailPage({ params }: { params: { id: string } }) {
+    const { store, isDataReady } = useApp();
+    const [person, setPerson] = useState<Person | null | undefined>(undefined);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    
+    useEffect(() => {
+        const loadData = async () => {
+            if (store) {
+                const personData = await store.getPersonById(params.id);
+                if (personData) {
+                    const transactionData = await store.getTransactionsByPersonId(params.id);
+                    setPerson(personData);
+                    setTransactions(transactionData);
+                } else {
+                    setPerson(null); // Not found
+                }
+            }
+        };
 
-  return (
-    <Suspense fallback={<PersonDetailFallback />}>
-      <PersonClient person={person} transactions={transactions} />
-    </Suspense>
-  );
+        if (isDataReady) {
+            loadData();
+        }
+    }, [isDataReady, store, params.id]);
+
+    if (person === undefined) {
+        return <PersonDetailFallback />;
+    }
+
+    if (person === null) {
+        notFound();
+    }
+
+    // person is defined and not null here, so it is a Person object.
+    // The explicit cast is to satisfy TypeScript.
+    return (
+        <PersonClient person={person as Person} transactions={transactions} />
+    );
 }

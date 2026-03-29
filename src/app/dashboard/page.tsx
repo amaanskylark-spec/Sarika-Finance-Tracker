@@ -1,9 +1,10 @@
-import { DataStore } from "@/lib/data";
-import { DashboardClient } from "@/components/dashboard/dashboard-client";
-import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
+'use client';
 
-export const dynamic = 'force-dynamic';
+import { DashboardClient } from "@/components/dashboard/dashboard-client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useApp } from "@/hooks/use-app";
+import { useEffect, useState } from "react";
+import type { Person, Transaction } from "@/lib/types";
 
 function DashboardFallback() {
   return (
@@ -18,17 +19,41 @@ function DashboardFallback() {
   )
 }
 
-export default async function DashboardPage() {
-  const store = new DataStore();
-  const persons = await store.getPersons();
-  const transactions = await store.getAllTransactions();
-  const user = store.getLoggedInUser();
-  
-  if (!user) return <DashboardFallback />;
+export default function DashboardPage() {
+  const { user, store, isDataReady } = useApp();
+  const [persons, setPersons] = useState<Person[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (isDataReady) {
+      if (user && store) {
+        Promise.all([
+          store.getPersons(),
+          store.getAllTransactions()
+        ]).then(([p, t]) => {
+          setPersons(p);
+          setTransactions(t);
+          setIsLoading(false);
+        });
+      } else {
+        // No user, AppContext will redirect. Stop loading.
+        setIsLoading(false);
+      }
+    }
+  }, [isDataReady, user, store]);
+
+  if (!isDataReady || isLoading) {
+    return <DashboardFallback />;
+  }
+
+  if (!user) {
+      // This path will be hit when `isDataReady` is true but there's no logged in user.
+      // AppContext should handle redirect, but we show fallback in the meantime.
+      return <DashboardFallback />
+  }
 
   return (
-    <Suspense fallback={<DashboardFallback />}>
-      <DashboardClient persons={persons} transactions={transactions} username={user.username} />
-    </Suspense>
+    <DashboardClient persons={persons} transactions={transactions} username={user.username} />
   );
 }
