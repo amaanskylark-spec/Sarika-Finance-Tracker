@@ -1,18 +1,66 @@
-import { DataStore } from '@/lib/data';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DeletedList } from '@/components/admin/deleted-list';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { MainHeader } from '@/components/main-header';
+import { useApp } from '@/hooks/use-app';
+import type { Person, Transaction } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export const dynamic = 'force-dynamic';
+function AdminPageFallback() {
+    return (
+        <div className="relative flex min-h-screen flex-col">
+            <MainHeader />
+            <main className="flex-1 container py-6">
+                <div className="flex items-center justify-between mb-4">
+                    <Skeleton className="h-9 w-96" />
+                    <Skeleton className="h-10 w-36" />
+                </div>
+                <Card>
+                    <CardContent className="p-0">
+                        <Skeleton className="h-12 w-full rounded-b-none border-b" />
+                        <div className="p-4">
+                            <Skeleton className="h-64 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </main>
+        </div>
+    )
+}
 
-export default async function AdminPage() {
-  const store = new DataStore();
-  const deletedPersons = await store.getDeletedPersons();
-  const deletedTransactions = await store.getDeletedTransactions();
+export default function AdminPage() {
+  const { store, isDataReady } = useApp();
+  const [deletedPersons, setDeletedPersons] = useState<Person[]>([]);
+  const [deletedTransactions, setDeletedTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadDeletedItems() {
+      if (store) {
+        setIsLoading(true);
+        const [persons, transactions] = await Promise.all([
+          store.getDeletedPersons(),
+          store.getDeletedTransactions(),
+        ]);
+        setDeletedPersons(persons);
+        setDeletedTransactions(transactions);
+        setIsLoading(false);
+      }
+    }
+    if (isDataReady) {
+      loadDeletedItems();
+    }
+  }, [store, isDataReady]);
+
+  if (!isDataReady || isLoading) {
+    return <AdminPageFallback />;
+  }
 
   return (
     <div className="relative flex min-h-screen flex-col">
