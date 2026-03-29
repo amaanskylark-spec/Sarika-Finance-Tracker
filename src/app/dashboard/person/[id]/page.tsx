@@ -18,6 +18,7 @@ function PersonDetailFallback() {
 }
 
 export default function PersonDetailPage({ params }: { params: { id: string } }) {
+    const { id } = params;
     const { store, isDataReady } = useApp();
     const [person, setPerson] = useState<Person | null | undefined>(undefined);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -30,9 +31,9 @@ export default function PersonDetailPage({ params }: { params: { id: string } })
     useEffect(() => {
         const loadData = async () => {
             if (store) {
-                const personData = await store.getPersonById(params.id);
+                const personData = await store.getPersonById(id);
                 if (personData) {
-                    const transactionData = await store.getTransactionsByPersonId(params.id);
+                    const transactionData = await store.getTransactionsByPersonId(id);
                     setPerson(personData);
                     setTransactions(transactionData);
                 } else {
@@ -44,7 +45,7 @@ export default function PersonDetailPage({ params }: { params: { id: string } })
         if (isDataReady) {
             loadData();
         }
-    }, [isDataReady, store, params.id, refreshKey]);
+    }, [isDataReady, store, id, refreshKey]);
 
     if (person === undefined) {
         return <PersonDetailFallback />;
