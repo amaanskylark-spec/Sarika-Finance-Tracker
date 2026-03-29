@@ -2,7 +2,7 @@
 
 import { PersonClient } from "@/components/person/person-client";
 import { notFound } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useApp } from "@/hooks/use-app";
 import type { Person, Transaction } from "@/lib/types";
@@ -18,7 +18,7 @@ function PersonDetailFallback() {
 }
 
 export default function PersonDetailPage({ params }: { params: { id: string } }) {
-    const { id } = params;
+    const { id } = use(params);
     const { store, isDataReady } = useApp();
     const [person, setPerson] = useState<Person | null | undefined>(undefined);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
