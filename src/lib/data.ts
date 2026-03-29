@@ -98,6 +98,7 @@ export function login(username: string, password: string): User | null {
 export function logout() {
   if (!isServer()) {
     sessionStorage.removeItem(LOGGED_IN_USER_KEY);
+    sessionStorage.removeItem('sarkia_isAdmin');
   }
 }
 
@@ -186,23 +187,27 @@ export async function getDeletedPersons(): Promise<Person[]> {
 export async function restorePerson(id: string): Promise<void> {
   const personIndex = persons.findIndex(p => p.id === id);
   if(personIndex > -1) {
+    const deletedBy = persons[personIndex].deletedBy;
+    
     persons[personIndex].deleted = false;
     delete persons[personIndex].deletedAt;
     delete persons[personIndex].deletedBy;
-    this.writeToStorage(PERSONS_KEY, persons);
+    writeToStorage(PERSONS_KEY, persons);
 
     // also restore transactions
-    transactions = transactions.map(t => {
-        if (t.personId === id && t.deletedBy === `CASCADE_DELETE_BY_${persons[personIndex].deletedBy}`) {
-            const restoredT = { ...t };
-            delete restoredT.deleted;
-            delete restoredT.deletedAt;
-            delete restoredT.deletedBy;
-            return restoredT;
-        }
-        return t;
-    });
-    writeToStorage(TRANSACTIONS_KEY, transactions);
+    if (deletedBy) {
+      transactions = transactions.map(t => {
+          if (t.personId === id && t.deletedBy === `CASCADE_DELETE_BY_${deletedBy}`) {
+              const restoredT = { ...t };
+              restoredT.deleted = false;
+              delete restoredT.deletedAt;
+              delete restoredT.deletedBy;
+              return restoredT;
+          }
+          return t;
+      });
+      writeToStorage(TRANSACTIONS_KEY, transactions);
+    }
   }
 }
 
