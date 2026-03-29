@@ -101,12 +101,10 @@ export class DataStore {
 
   // --- Persons ---
   async getPersons(): Promise<Person[]> {
-    this.persons = this.readFromStorage(PERSONS_KEY, this.persons);
     return this.persons.filter(p => !p.deleted);
   }
 
   async getPersonById(id: string): Promise<Person | undefined> {
-    this.persons = this.readFromStorage(PERSONS_KEY, this.persons);
     return this.persons.find(p => p.id === id && !p.deleted);
   }
 
@@ -121,6 +119,21 @@ export class DataStore {
     };
     this.persons.push(newPerson);
     this.writeToStorage(PERSONS_KEY, this.persons);
+
+    // If there's an initial balance, create the initial transaction
+    if (newPerson.initialBalance !== 0) {
+      const initialTransaction: Omit<Transaction, 'id' | 'createdAt' | 'srNo' | 'deleted'> = {
+        personId: newPerson.id,
+        amount: Math.abs(newPerson.initialBalance),
+        type: newPerson.initialBalance > 0 ? 'expense' : 'income',
+        date: now,
+        description: 'Initial Balance',
+        category: 'Opening Balance',
+        addedBy: newPerson.addedBy,
+      };
+      await this.addTransaction(initialTransaction);
+    }
+    
     return newPerson;
   }
   
@@ -159,7 +172,6 @@ export class DataStore {
   }
 
   async getDeletedPersons(): Promise<Person[]> {
-      this.persons = this.readFromStorage(PERSONS_KEY, this.persons);
       return this.persons.filter(p => p.deleted);
   }
 
@@ -175,22 +187,18 @@ export class DataStore {
 
   // --- Transactions ---
   async getAllTransactions(): Promise<Transaction[]> {
-    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
     return this.transactions.filter(t => !t.deleted);
   }
 
   async getTransactionsByPersonId(personId: string): Promise<Transaction[]> {
-    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
     return this.transactions.filter(t => t.personId === personId && !t.deleted);
   }
 
   async getTransactionById(id: string, includeDeleted = false): Promise<Transaction | undefined> {
-    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
     return this.transactions.find(t => t.id === id && (includeDeleted || !t.deleted));
   }
   
   private _getAllTransactionsByPersonId_includingDeleted(personId: string): Transaction[] {
-    this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
     return this.transactions.filter(t => t.personId === personId);
   }
 
@@ -241,7 +249,6 @@ export class DataStore {
   }
 
   async getDeletedTransactions(): Promise<Transaction[]> {
-      this.transactions = this.readFromStorage(TRANSACTIONS_KEY, this.transactions);
       return this.transactions.filter(t => t.deleted);
   }
 

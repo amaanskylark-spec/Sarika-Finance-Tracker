@@ -38,29 +38,11 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
   const router = useRouter();
 
   const { person, transactions, balance } = useMemo(() => {
-    const allTransactions = [...initialTransactions];
-    if (initialPerson.initialBalance !== 0) {
-      const initialTransaction: Transaction = {
-        id: 'initial-balance',
-        personId: initialPerson.id,
-        srNo: 0,
-        amount: Math.abs(initialPerson.initialBalance),
-        type: initialPerson.initialBalance > 0 ? 'expense' : 'income',
-        date: initialPerson.createdAt,
-        description: 'Initial Balance',
-        category: 'Opening Balance',
-        createdAt: initialPerson.createdAt,
-        addedBy: initialPerson.addedBy,
-        deleted: false,
-      };
-      allTransactions.push(initialTransaction);
-    }
-    
-    const sortedTransactions = allTransactions.sort((a, b) => a.srNo - b.srNo);
+    const sortedTransactions = [...initialTransactions].sort((a, b) => a.date - b.date || a.srNo - b.srNo);
 
     const given = sortedTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
     const received = sortedTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
-    const currentBalance = given - received;
+    const currentBalance = initialPerson.initialBalance + given - received;
 
     return { person: initialPerson, transactions: sortedTransactions, balance: currentBalance };
   }, [initialPerson, initialTransactions]);
@@ -199,9 +181,9 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((t, index) => (
+                {transactions.map((t) => (
                   <TableRow key={t.id}>
-                    <TableCell className="font-medium">{t.srNo === 0 ? 'Initial' : t.srNo}</TableCell>
+                    <TableCell className="font-medium">{t.srNo}</TableCell>
                     <TableCell>{new Date(t.date).toLocaleDateString()}</TableCell>
                     <TableCell>{t.description}</TableCell>
                     <TableCell>{t.category || '-'}</TableCell>
@@ -218,11 +200,11 @@ export function PersonClient({ person: initialPerson, transactions: initialTrans
                     <TableCell>{t.addedBy}</TableCell>
                     <TableCell className="flex gap-2">
                        <AddTransactionDialog personId={person.id} transaction={t} onTransactionComplete={onDataChange}>
-                         <Button variant="ghost" size="icon" disabled={t.id === 'initial-balance'}><Edit className="h-4 w-4" /></Button>
+                         <Button variant="ghost" size="icon" disabled={t.description === 'Initial Balance'}><Edit className="h-4 w-4" /></Button>
                        </AddTransactionDialog>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" disabled={t.id === 'initial-balance'}><Trash2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" disabled={t.description === 'Initial Balance'}><Trash2 className="h-4 w-4" /></Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
