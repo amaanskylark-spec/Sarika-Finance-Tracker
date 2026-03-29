@@ -1,0 +1,8 @@
+{
+  "appId": "com.sarkia.app",
+  "appName": "Sarkia",
+  "webDir": "out",
+  "server": {
+    "androidScheme": "https"
+  }
+}
