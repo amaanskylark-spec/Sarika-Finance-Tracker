@@ -51,7 +51,7 @@ export function AddTransactionDialog({ children, personId, transaction, onTransa
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [isAiLoading, setIsLoading] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const { toast } = useToast();
   const { user } = useApp();
