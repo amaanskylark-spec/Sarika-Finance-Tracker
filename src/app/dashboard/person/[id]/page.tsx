@@ -7,12 +7,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useApp } from "@/hooks/use-app";
 import type { Person, Transaction } from "@/lib/types";
 
-// This function is required for static export. It tells Next.js that there are
-// no person pages to pre-render at build time. All person pages will be
-// rendered on the client.
-export async function generateStaticParams() {
-  return [];
-}
 
 function PersonDetailFallback() {
     return (
